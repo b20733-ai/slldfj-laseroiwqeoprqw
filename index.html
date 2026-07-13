@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 교과서 통계학 스나이퍼 작전 v5.5</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            background-color: #0f172a; margin: 0; padding: 20px; color: #e2e8f0;
+            display: flex; justify-content: center; align-items: center; min-height: 95vh;
+        }
+        .game-container {
+            max-width: 760px; width: 100%; background: #1e293b; padding: 25px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 2px solid #334155;
+        }
+        .screen { display: none; }
+        .active { display: block; animation: popIn 0.3s ease-out; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+        
+        h1 { font-size: 24px; color: #38bdf8; text-align: center; margin-top: 0; }
+        .narration { background: #0f172a; padding: 15px; border-radius: 12px; border-left: 5px solid #38bdf8; margin-bottom: 20px; font-size: 14px; line-height: 1.6; }
+        
+        .guide-box { background: #0f172a; padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 20px; font-size: 13.5px; }
+        .guide-step { margin-bottom: 12px; line-height: 1.5; }
+        .guide-step b { color: #38bdf8; }
+        
+        .select-btn {
+            background: #334155; color: white; border: none; padding: 18px;
+            font-size: 15px; font-weight: bold; border-radius: 12px; cursor: pointer;
+            transition: all 0.2s; width: 100%; margin-bottom: 12px; text-align: left;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .select-btn:hover { background: #475569; transform: translateX(5px); box-shadow: 0 0 10px rgba(56,189,248,0.3); }
+
+        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .input-box { background: #0f172a; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #334155; display: flex; flex-direction: column; justify-content: center; }
+        input[type=range] { width: 80%; margin: 0 auto; vertical-align: middle; }
+
+        .radio-group { display: flex; justify-content: center; gap: 10px; margin-top: 5px; }
+        .radio-label { background: #1e293b; border: 2px solid #334155; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; transition: all 0.2s; }
+        .radio-group input[type="radio"] { display: none; }
+        .radio-group input[type="radio"]:checked + .radio-label { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
+
+        .btn-play { background: #38bdf8; color: #0f172a; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-play:hover { background: #7dd3fc; }
+        .btn-action-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+
+        .graph-box { background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 12px; margin-top: 15px; text-align: center; }
+        .graph-title { font-size: 12px; color: #38bdf8; font-weight: bold; text-align: left; margin-bottom: 5px; }
+        canvas { background: #0b111e; border-radius: 8px; width: 100%; display: block; }
+
+        .stat-principle-box { background: #1e293b; border: 2px solid #38bdf8; padding: 15px; border-radius: 12px; margin-top: 15px; }
+        .principle-title { font-size: 14px; font-weight: bold; color: #38bdf8; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        .indicator-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 8px; background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #334155; }
+        .indicator-badge { padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        .badge-up { background: #ef4444; color: white; }
+        .badge-down { background: #38bdf8; color: #0f172a; }
+
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .board { background: #0f172a; padding: 15px; border-radius: 12px; border: 2px solid #334155; text-align: center; }
+        .board.pop { border-color: #94a3b8; }
+        .board.sample { border-color: #38bdf8; }
+        .board h3 { margin-top: 0; font-size: 14px; color: #94a3b8; }
+        .board.sample h3 { color: #38bdf8; }
+        
+        .huge-number { font-size: 26px; font-weight: bold; margin: 8px 0; color: #fff; }
+        .sub-stat { font-size: 12px; color: #cbd5e1; background: #222e45; padding: 4px; border-radius: 4px; margin: 4px 0; }
+        .data-list { background: #1e293b; padding: 8px; border-radius: 6px; font-size: 11px; max-height: 50px; overflow-y: auto; text-align: left; color: #94a3b8; word-break: break-all; margin-top: 8px; }
+
+        .full-board { grid-column: span 2; background: #111827; border: 2px dashed #a855f7; padding: 15px; border-radius: 12px; text-align: center; margin-top: 5px; transition: all 0.3s; }
+        .radar-zone { position: relative; height: 35px; background: #1e293b; border-radius: 8px; margin-top: 10px; border: 1px solid #334155; }
+        .target-line { position: absolute; top: 0; bottom: 0; border-left: 2px dashed #ef4444; left: 50%; }
+        .laser-bar { position: absolute; height: 8px; top: 14px; border-radius: 4px; }
+        .center-dot { position: absolute; width: 8px; height: 8px; background: white; border-radius: 50%; top: 14px; transform: translateX(-4px); }
+
+        /* 100회 작전 레이아웃 리디자인 (쾌적함 부여) */
+        .sim-dashboard { background: #1e1b4b; border: 2px solid #4338ca; border-radius: 12px; padding: 15px; margin-top: 15px; display: flex; flex-direction: column; gap: 12px; }
+        .sim-stats-container { display: flex; justify-content: space-around; width: 100%; background: #0f172a; padding: 12px; border-radius: 8px; }
+        .sim-stat-box { text-align: center; }
+        .sim-stat-box span { display: block; font-size: 11px; color: #a5b4fc; }
+        .sim-stat-box b { font-size: 18px; color: #fff; }
+        
+        /* 징그러운 느낌을 해소하기 위해 캔버스 스크롤 컨테이너 기획 */
+        .canvas-scroll-box { 
+            width: 100%; max-height: 240px; overflow-y: auto; background: #0b111e; 
+            border-radius: 8px; border: 1px solid #334155; position: relative;
+        }
+
+        .formula-box { background: #0f172a; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #a855f7; text-align: left; }
+        .formula-title { color: #a855f7; font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+        .math-style { font-family: 'Times New Roman', serif; font-style: italic; background: #1e293b; padding: 8px; border-radius: 6px; display: block; text-align: center; font-size: 16px; color: #f59e0b; margin: 8px 0; white-space: pre-line; line-height: 1.5; }
+
+        .explain-box { background: #1e293b; padding: 20px; border-radius: 12px; margin-top: 15px; border-left: 5px solid #38bdf8; font-size: 13.5px; text-align: left; line-height: 1.7; }
+        .brief-section { margin-bottom: 15px; background: #111827; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; }
+        .brief-title { font-weight: bold; color: #38bdf8; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    
+    <div id="screen0" class="screen active">
+        <h1>🎯 통계학 스나이퍼 작전 훈련소</h1>
+        <div class="narration">
+            통계학 요원 프로그램에 온 것을 환영하네! 이 웹사이트는 고등학교 수학 교과서에 나오는 <b>[모집단과 표본추정, 신뢰구간]</b>의 핵심 원리를 완벽하게 마스터하기 위해 설계된 특수 시뮬레이터라네.
+        </div>
+        <div class="guide-box">
+            <div class="guide-step">📌 <b>STEP 1. 탐사 주제 선택:</b> 알고 싶은 전교생의 데이터 종류를 선택합니다.</div>
+            <div class="guide-step">📌 <b>STEP 2. 잠입 교실 선택:</b> 데이터가 촘촘히 뭉친 반과 제각각인 반 중 하나를 고릅니다.</div>
+            <div class="guide-step">📌 <b>STEP 3. 작전 조건 설정:</b> 표본 크기($n$)와 신뢰도(95% 또는 99%)를 정합니다.</div>
+            <div class="guide-step">⚡ <b>최종 임무 (저격):</b> 내가 뽑은 표본들로 계산해 낸 <b>[보라색 포위망(신뢰구간)]</b>이 교실 전체의 <b>[진짜 평균(모평균)]</b>을 정확하게 가두었는지(저격 성공) 눈으로 확인하는 것이네!</div>
+        </div>
+        <button class="btn-play" style="background: #38bdf8; font-size:18px; padding:18px;" onclick="nextScreen(1)">🚀 이해했습니다. 작전 시작하기!</button>
+    </div>
+    
+    <div id="screen1" class="screen">
+        <h1 id="t1"></h1>
+        <div class="narration" id="n1"></div>
+        <button class="select-btn" onclick="setTheme('독서 시간', '시간')"><span id="b1_1"></span> <span>➡️</span></button>
+        <button class="select-btn" onclick="setTheme('평균 수면 시간', '시간')"><span id="b1_2"></span> <span>➡️</span></button>
+        <button class="select-btn" onclick="setTheme('스마트폰 요금', '원')"><span id="b1_3"></span> <span>➡️</span></button>
+    </div>
+
+    <div id="screen2" class="screen">
+        <h1 id="t2"></h1>
+        <div class="narration" id="n2"></div>
+        <button class="select-btn" onclick="selectClass(1)"><span id="b2_1"></span> <span>➡️</span></button>
+        <button class="select-btn" onclick="selectClass(2)"><span id="b2_2"></span> <span>➡️</span></button>
+        <button class="btn-play" style="background:#334155; color:white;" onclick="nextScreen(1)" id="b2_back"></button>
+    </div>
+
+    <div id="screen3" class="screen">
+        <h1>⚡ <span id="clsName"></span> <span id="t3_title"></span></h1>
+        <div class="narration" id="n3"></div>
+        
+        <div class="control-grid">
+            <div class="input-box">
+                <label style="font-size:14px; font-weight:bold; display:block; margin-bottom:8px;"><span id="label_size"></span> <span id="sizeLabel" style="color:#38bdf8;">5명</span></label>
+                <input type="range" id="sSize" min="2" max="25" value="5" oninput="updateSizeLabel(this.value)">
+            </div>
+            <div class="input-box">
+                <label style="font-size:14px; font-weight:bold; display:block; margin-bottom:8px;">🎯 작전 신뢰도 설정 (K값):</label>
+                <div class="radio-group">
+                    <input type="radio" id="conf95" name="confidence" value="95" checked onchange="handleConfidenceChange()">
+                    <label for="conf95" class="radio-label">95% (1.96)</label>
+                    <input type="radio" id="conf99" name="confidence" value="99" onchange="handleConfidenceChange()">
+                    <label for="conf99" class="radio-label">99% (2.58)</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-action-group">
+            <button class="btn-play" style="background: #f59e0b; margin-top:0;" onclick="runSingleScan()" id="b3_scan"></button>
+            <button class="btn-play" style="background: #a855f7; color:white; margin-top:0;" onclick="runMultiSimulation()">🔁 100회 연속 작전 가동!</button>
+        </div>
+
+        <div id="statPrincipleBox" class="stat-principle-box" style="display:none;">
+            <div class="principle-title">⚙️ 실시간 요원 설정에 따른 통계 공식의 변화 상태</div>
+            <div class="indicator-row">
+                <span>1️⃣ 표본의 크기(<span style="color:#38bdf8; font-weight:bold;" id="indN">n</span>) 조건</span>
+                <span id="indNFeedback" class="indicator-badge">데이터 로딩 중</span>
+            </div>
+            <div class="indicator-row">
+                <span>2️⃣ 작전 신뢰도(<span style="color:#a855f7; font-weight:bold;" id="indK">K</span>) 조건</span>
+                <span id="indKFeedback" class="indicator-badge">데이터 로딩 중</span>
+            </div>
+            <div class="indicator-row" style="margin-bottom:0; background:#1e1b4b; border-color:#a855f7;">
+                <span>🎯 최종 예측 포위망(오차범위)의 결과 폭</span>
+                <span id="indWidthFeedback" style="font-weight:bold; color:#f59e0b;">계산 중</span>
+            </div>
+        </div>
+
+        <div id="simDashboard" class="sim-dashboard" style="display:none;">
+            <div class="sim-stats-container">
+                <div class="sim-stat-box"><span>총 저격 횟수</span><b style="color:#a5b4fc;">100회</b></div>
+                <div class="sim-stat-box"><span>🎯 저격 성공(포획)</span><b id="simSuccess" style="color:#34d399;">0회</b></div>
+                <div class="sim-stat-box"><span>💥 저격 실패(놓침)</span><b id="simFail" style="color:#f87171;">0회</b></div>
+                <div class="sim-stat-box"><span>실제 포획률</span><b id="simRate" style="color:#f59e0b;">0%</b></div>
+            </div>
+            <div style="font-size:12px; color:#a5b4fc; font-weight:bold;">📊 100회 작전 결과 시각화 모니터 (마우스 휠로 위아래 스크롤 가능 👇)</div>
+            <div class="canvas-scroll-box">
+                <canvas id="multiCanvas" width="700" height="650" style="width:100%; height:auto; background:#0b111e;"></canvas>
+            </div>
+        </div>
+
+        <div id="resultBoard" style="display:none;">
+            <div class="graph-box">
+                <div class="graph-title" id="g_title"></div>
+                <canvas id="statCanvas" width="600" height="150"></canvas>
+            </div>
+
+            <div class="compare-grid">
+                <div class="board pop">
+                    <h3 id="card1_title"></h3>
+                    <div class="huge-number" id="vPopMean" style="color: #94a3b8;">0</div>
+                    <div style="font-size:11px; color:#94a3b8;" id="card1_sub"></div>
+                    <div class="sub-stat" id="vPopStd"></div>
+                    <div class="data-list" id="vPopData"></div>
+                </div>
+                <div class="board sample">
+                    <h3 id="card2_title"></h3>
+                    <div class="huge-number" id="vSampleMean" style="color: #38bdf8;">0</div>
+                    <div style="font-size:11px; color:#38bdf8;" id="card2_sub"></div>
+                    <div class="sub-stat" id="vSampleStd" style="background:#1e293b; color:#38bdf8;"></div>
+                    <div class="data-list" id="vSampleData"></div>
+                </div>
+                <div id="fullBoard" class="full-board">
+                    <h3 style="color:#a855f7; margin:0; font-size:14px;" id="card3_title"></h3>
+                    <div style="font-size:18px; font-weight:bold; margin:8px 0;" id="vIntervalText">0 ~ 0</div>
+                    <div class="radar-zone" id="radarZone"><div class="target-line"></div></div>
+                    <div style="font-size:11px; color:#94a3b8; margin-top:5px;" id="card3_sub"></div>
+                </div>
+            </div>
+
+            <div class="formula-box">
+                <div class="formula-title" id="f_title"></div>
+                <div style="font-size: 13px; color: #cbd5e1; line-height: 1.4;" id="f_sub"></div>
+                <div class="math-style" id="stepFormula"></div>
+                <div style="font-size: 13px; color: #f59e0b; font-weight: bold; text-align: center; margin-top: 5px;" id="formulaInterpretation"></div>
+                <div style="font-size: 12px; color: #94a3b8; text-align: right; margin-top: 5px;" id="errorMarginText"></div>
+            </div>
+
+            <div class="explain-box">
+                <h3 style="margin: 0 0 15px 0; color:#38bdf8; font-size:16px; border-bottom: 2px solid #334155; padding-bottom: 8px;" id="report_title"></h3>
+                
+                <div class="brief-section">
+                    <div class="brief-title" id="br1_t"></div>
+                    <div id="briefPart1"></div>
+                </div>
+
+                <div class="brief-section">
+                    <div class="brief-title" id="br2_t"></div>
+                    <div id="briefPart2"></div>
+                </div>
+
+                <div class="brief-section">
+                    <div class="brief-title" id="br3_t"></div>
+                    <div id="briefPart3"></div>
+                </div>
+
+                <div class="brief-section" style="border-color: #a855f7;" id="br4_box">
+                    <div class="brief-title" style="color: #a855f7;" id="br4_t"></div>
+                    <div id="briefPart4"></div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-play" style="background:#334155; color:white; margin-top:15px;" onclick="nextScreen(2)" id="b3_back"></button>
+    </div>
+
+</div>
+
+<script>
+    const lang = {
+        t1: "🎯 통계학 스나이퍼 작전: 모집단과 표본 추정",
+        n1: "요원 환영하네! 오늘 자네의 임무는 학교 전체 학생(모집단)의 '진짜 평균'을 포획하는 것이네. 단서로 삼을 '표본(Sample)'을 추출하고 범위를 가두어 진짜 평균이 숨어있을 범위를 추리하게.",
+        b1_1: "📚 테마 01: 학생들의 일주일 독서 시간",
+        b1_2: "💤 테마 02: 시험 기간 평균 수면 시간",
+        b1_3: "💸 테마 03: 한 달 스마트폰 사용 요금",
+        t2: "🚪 복도: 잠입할 교실 선택",
+        n2: "복도에 도착했군. 반마다 데이터가 흩어진 정도(표준편차)가 다르다네. 성향이 비슷해 촘촘하게 모인 반이 있고, 개성이 강해 넓게 퍼진 반이 있지. 표준편차가 클수록 타겟을 가두기 위한 난이도가 올라간다네.",
+        b2_1: "🚪 1학년 1반 (성향이 고름 ➡️ 표준편차가 작은 집단)",
+        b2_2: "🚪 2학년 4반 (성향이 제각각 ➡️ 표준편차가 큰 집단)",
+        b2_back: "⬅️ 테마 다시 고르기",
+        t3_title: "종합 통계 분석 스캔",
+        n3: "이 교실의 학생 30명은 우리의 연구 대상인 '모집단'이네. 슬라이더로 추출할 표본의 크기(n)를 정하고 작전 신뢰도를 선택하게. '저격'이란 내가 계산한 신뢰구간(보라색 포위망) 안에 고정된 진짜 평균이 포획되었는지를 판정하는 것이네.",
+        label_size: "🎯 추출할 표본의 크기 (n):",
+        b3_scan: "⚡ 단판 표본 저격 스캔",
+        g_title: "📊 통계 고글: 데이터 분포 (회색 곡선: 모집단 전체 / 파란 점: 내가 추출한 표본들의 위치)",
+        card1_title: "🏛️ 교실 전체 30명 (모집단)",
+        card1_sub: "🎯 숨겨진 타겟: 진짜 실제 평균 (모평균)",
+        card2_title: "🔬 추출된 소수 집단 (표본집단)",
+        card2_sub: "📢 단서 데이터: 조사된 평균 (표본평균)",
+        card3_title: "⚡ 진짜 평균 포획 구역 (신뢰구간 포위망)",
+        card3_sub: "(빨간 점선: 고정된 진짜 평균 위치 / 색상 막대: 내가 계산한 포위망 / 흰 점: 단서가 된 표본평균)",
+        f_title: "📐 포위망 분석기: 신뢰구간 수학 공식 대입",
+        f_sub: "교과서 공식: [표본평균 - K × (표본표준편차 / √n)] ~ [표본평균 + K × (표본표준편차 / √n)]",
+        report_title: "📋 요원 통계 분석 최종 브리핑 보고서",
+        br1_t: "🏛️ 1. 모집단과 표본의 통계학적 관계",
+        br2_t: "📊 2. 표준편차(데이터의 분산도)가 주는 수학적 영향",
+        br3_t: "📐 3. 표본의 크기(n)와 신뢰도가 포위망 폭을 바꾸는 원리",
+        br4_t: "⚠️ 4. [필독] '저격 성공'과 '신뢰도 %'의 진짜 수학적 본질",
+        b3_back: "🏃‍♂️ 다른 반 조사하러 복도로 나가기"
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        for (let key in lang) {
+            let el = document.getElementById(key);
+            if (el) el.innerHTML = lang[key];
+        }
+    });
+
+    let currentTheme = ''; let currentUnit = ''; let classStudents = []; let popStdDev = 0; let targetBaseAvg = 0;
+
+    function setTheme(theme, unit) {
+        currentTheme = theme; currentUnit = unit;
+        nextScreen(2);
+    }
+
+    function nextScreen(num) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen' + num).classList.add('active');
+        if(num === 2) {
+            document.getElementById('resultBoard').style.display = 'none';
+            document.getElementById('simDashboard').style.display = 'none';
+            document.getElementById('statPrincipleBox').style.display = 'none';
+        }
+    }
+
+    function updateSizeLabel(value) {
+        document.getElementById('sizeLabel').innerText = value + "명";
+        if(document.getElementById('resultBoard').style.display === 'block') {
+            runSingleScan();
+        }
+    }
+
+    function handleConfidenceChange() {
+        if(document.getElementById('resultBoard').style.display === 'block') {
+            runSingleScan();
+        }
+    }
+
+    function selectClass(classNum) {
+        let clsTxt = classNum === 1 ? "1학년 1반" : "2학년 4반";
+        document.getElementById('clsName').innerText = clsTxt;
+        
+        targetBaseAvg = currentTheme.indexOf("독서") > -1 ? 7 : currentTheme.indexOf("수면") > -1 ? 5.5 : 45000;
+        popStdDev = classNum === 1 ? (targetBaseAvg * 0.12) : (targetBaseAvg * 0.35);
+
+        classStudents = [];
+        for (let i = 0; i < 30; i++) {
+            const u1 = Math.random(); const u2 = Math.random();
+            const randStdNormal = Math.sqrt(-2.0 * Math.log(u1)) * Math.sin(2.0 * Math.PI * u2);
+            let val = randStdNormal * popStdDev + targetBaseAvg;
+            if(targetBaseAvg > 1000) val = Math.round(val/100)*100;
+            classStudents.push(parseFloat(Math.max(targetBaseAvg * 0.2, val).toFixed(1)));
+        }
+        nextScreen(3);
+    }
+
+    function drawDistributionGraph(popMean, popStd, sample) {
+        const canvas = document.getElementById('statCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.beginPath(); ctx.strokeStyle = '#475569'; ctx.lineWidth = 2.5;
+        let minX = targetBaseAvg - popStd * 3.5; let maxX = targetBaseAvg + popStd * 3.5;
+        
+        for (let canvasX = 0; canvasX < canvas.width; canvasX++) {
+            let mathX = minX + (canvasX / canvas.width) * (maxX - minX);
+            let power = -Math.pow(mathX - popMean, 2) / (2 * Math.pow(popStd, 2));
+            let mathY = (1 / (popStd * Math.sqrt(2 * Math.PI))) * Math.exp(power);
+            let canvasY = canvas.height - 20 - (mathY * popStd * (canvas.height - 35));
+            if (canvasX === 0) ctx.moveTo(canvasX, canvasY); else ctx.lineTo(canvasX, canvasY);
+        }
+        ctx.stroke();
+
+        let popMeanCanvasX = ((popMean - minX) / (maxX - minX)) * canvas.width;
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(popMeanCanvasX, 10); ctx.lineTo(popMeanCanvasX, canvas.height - 15); ctx.stroke(); ctx.setLineDash([]);
+
+        sample.forEach(val => {
+            let sampleX = ((val - minX) / (maxX - minX)) * canvas.width;
+            let power = -Math.pow(val - popMean, 2) / (2 * Math.pow(popStd, 2));
+            let mathY = (1 / (popStd * Math.sqrt(2 * Math.PI))) * Math.exp(power);
+            let sampleY = canvas.height - 20 - (mathY * popStd * (canvas.height - 35));
+            ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(sampleX, sampleY, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.stroke();
+        });
+    }
+
+    function runSingleScan(quietMode = false) {
+        const n = parseInt(document.getElementById('sSize').value);
+        const popMean = classStudents.reduce((a,b)=>a+b, 0) / 30;
+        const realPopStd = Math.sqrt(classStudents.reduce((a, b) => a + Math.pow(b - popMean, 2), 0) / 30);
+
+        const shuffled = [...classStudents].sort(() => 0.5 - Math.random());
+        const sample = shuffled.slice(0, n);
+        const sampleMean = sample.reduce((a,b)=>a+b, 0) / n;
+        
+        const sampleVariance = sample.reduce((a, b) => a + Math.pow(b - sampleMean, 2), 0) / (n - 1);
+        const sampleStdDev = Math.max(0.1, Math.sqrt(sampleVariance));
+
+        const confValue = document.querySelector('input[name="confidence"]:checked').value;
+        const K = confValue === "95" ? 1.96 : 2.58;
+
+        let realMargin = K * (sampleStdDev / Math.sqrt(n));
+        let realLower = Math.max(0, sampleMean - realMargin);
+        let realUpper = sampleMean + realMargin;
+
+        let isCaptured = (popMean >= realLower && popMean <= realUpper);
+
+        if (quietMode) {
+            return { isCaptured, realLower, realUpper, sampleMean, realPopStd, popMean };
+        }
+
+        document.getElementById('statPrincipleBox').style.display = 'block';
+        document.getElementById('indN').innerText = `n = ${n}`;
+        document.getElementById('indK').innerText = `K = ${K}`;
+
+        const nBadge = document.getElementById('indNFeedback');
+        if (n <= 5) {
+            nBadge.className = "indicator-badge badge-up";
+            nBadge.innerText = "⚠️ 너무 적게 뽑음 ➡️ 단서 부족으로 포위망 폭이 늘어남 (분모 하락)";
+        } else {
+            nBadge.className = "indicator-badge badge-down";
+            nBadge.innerText = "✨ 많이 뽑음 ➡️ 단서 정확해져서 포위망이 좁고 날카로워짐 (분모 상승)";
+        }
+
+        const kBadge = document.getElementById('indKFeedback');
+        if (K === 1.96) {
+            kBadge.className = "indicator-badge badge-down";
+            kBadge.innerText = "🎯 95% 신뢰도 ➡️ 적당한 안전 계수로 포위망 폭이 촘촘함";
+        } else {
+            kBadge.className = "indicator-badge badge-up";
+            kBadge.innerText = "🛡️ 99% 신뢰도 ➡️ 절대 안 놓치려고 안전 계수 커짐 ➡️ 포위망이 뚱뚱하고 길어짐";
+        }
+
+        const isPrice = targetBaseAvg > 1000;
+        const fmt = (v) => isPrice ? Math.round(v).toLocaleString() + " " + currentUnit : v.toFixed(1) + " " + currentUnit;
+        const fmtStd = (v) => isPrice ? Math.round(v).toLocaleString() + " " + currentUnit : v.toFixed(2) + " " + currentUnit;
+
+        document.getElementById('indWidthFeedback').innerText = `오차 폭: ∓${isPrice ? Math.round(realMargin).toLocaleString() : realMargin.toFixed(2)}${currentUnit}`;
+
+        document.getElementById('simDashboard').style.display = 'none'; 
+        drawDistributionGraph(popMean, realPopStd, sample);
+
+        let minX = targetBaseAvg - realPopStd * 3.5; 
+        let maxX = targetBaseAvg + realPopStd * 3.5;
+        let rangeX = maxX - minX;
+
+        let leftSide = Math.max(2, Math.min(98, ((realLower - minX) / rangeX) * 100));
+        let rightSide = Math.max(2, Math.min(98, ((realUpper - minX) / rangeX) * 100));
+        let graphicCenter = Math.max(2, Math.min(98, ((sampleMean - minX) / rangeX) * 100));
+        let centerOffset = Math.max(2, Math.min(98, ((popMean - minX) / rangeX) * 100));
+
+        document.getElementById('vPopMean').innerText = fmt(popMean);
+        document.getElementById('vPopStd').innerText = "모표준편차: " + fmtStd(realPopStd);
+        document.getElementById('vSampleMean').innerText = fmt(sampleMean);
+        document.getElementById('vSampleStd').innerText = "표본표준편차(s): " + fmtStd(sampleStdDev);
+        
+        document.getElementById('vPopData').innerText = "모집단 전원 데이터: " + classStudents.join(', ');
+        document.getElementById('vSampleData').innerText = "추출된 표본 데이터: " + sample.join(', ');
+
+        document.getElementById('vIntervalText').innerText = `${fmt(realLower)} ~ ${fmt(realUpper)}`;
+
+        let rawMean = sampleMean.toFixed(2); let rawStd = sampleStdDev.toFixed(2);
+        let sqrtN = Math.sqrt(n).toFixed(2); let calcMargin = realMargin.toFixed(2);
+        
+        if (isPrice) {
+            document.getElementById('stepFormula').innerText = `${Math.round(sampleMean).toLocaleString()} ± ${K} × (${Math.round(sampleStdDev).toLocaleString()} / √${n}) \n= ${Math.round(sampleMean).toLocaleString()} ± ${Math.round(realMargin).toLocaleString()} ${currentUnit}`;
+            document.getElementById('errorMarginText').innerText = "계산된 오차 범위 = ∓" + Math.round(realMargin).toLocaleString() + currentUnit;
+        } else {
+            document.getElementById('stepFormula').innerText = `${rawMean} ± ${K} × (${rawStd} / ${sqrtN}) \n= ${rawMean} ± ${calcMargin} ${currentUnit}`;
+            document.getElementById('errorMarginText').innerText = "계산된 오차 범위 = ∓" + calcMargin + currentUnit;
+        }
+
+        const interpretationBox = document.getElementById('formulaInterpretation');
+        if (isCaptured) {
+            interpretationBox.innerHTML = `🎯 판정: 저격 성공(포획)! 진짜 평균(${fmt(popMean)})이 내가 만든 범위 안에 쏙 들어왔네!`;
+            interpretationBox.style.color = "#34d399";
+        } else {
+            interpretationBox.innerHTML = `💥 판정: 저격 실패(탈출)! 표본이 너무 극단적이라 진짜 평균(${fmt(popMean)})이 범위를 벗어났네!`;
+            interpretationBox.style.color = "#f87171";
+        }
+
+        const fullBoard = document.getElementById('fullBoard');
+        if (isCaptured) {
+            fullBoard.style.borderColor = "#34d399";
+            fullBoard.style.boxShadow = "0 0 15px rgba(52, 211, 153, 0.4)";
+            document.getElementById('card3_title').innerHTML = "🎯 작전 결과: 저격 성공! 진짜 평균을 가두었습니다.";
+            document.getElementById('card3_title').style.color = "#34d399";
+        } else {
+            fullBoard.style.borderColor = "#ef4444";
+            fullBoard.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.4)";
+            document.getElementById('card3_title').innerHTML = "💥 작전 결과: 저격 실패! 진짜 평균을 놓쳤습니다.";
+            document.getElementById('card3_title').style.color = "#ef4444";
+        }
+
+        const zone = document.getElementById('radarZone'); 
+        zone.innerHTML = `<div class="target-line" style="left: ${centerOffset}%;"></div>`;
+        
+        const bar = document.createElement('div'); 
+        bar.className = 'laser-bar';
+        bar.style.background = isCaptured ? '#34d399' : '#ef4444'; 
+        bar.style.boxShadow = isCaptured ? '0 0 8px #34d399' : '0 0 8px #ef4444';
+        bar.style.left = `${leftSide}%`; 
+        bar.style.width = `${rightSide - leftSide}%`;
+        
+        const dot = document.createElement('div'); 
+        dot.className = 'center-dot'; 
+        dot.style.left = `${graphicCenter}%`;
+        
+        zone.appendChild(bar); 
+        zone.appendChild(dot);
+
+        document.getElementById('briefPart1').innerHTML = 
+            "이 교실 모집단 30명의 변하지 않는 진짜 평균(모평균)은 " + `<b>${fmt(popMean)}</b>` + "이네. 하지만 현실의 통계학자는 이 정답을 모르지. 자네가 무작위로 추출한 단서인 표본평균 " + `<b>${fmt(sampleMean)}</b>` + "과 오차 범위를 조합하여 포위망을 친 것이라네.";
+
+        let className = document.getElementById('clsName').innerText;
+        let isClass1 = className.indexOf("1") > -1;
+        if(isClass1) {
+            document.getElementById('briefPart2').innerHTML = 
+                "1반은 데이터가 고르게 뭉쳐있어 표본표준편차(s)가 " + `<b>${fmtStd(sampleStdDev)}</b>` + "로 작게 나온다네. 단서가 명확하니 포위망 폭이 아주 예리하고 좁게 압축되지. 대신 폭이 좁은 만큼 표본이 조금만 튀어도 타겟을 놓칠 위험이 존재하네.";
+        } else {
+            document.getElementById('briefPart2').innerHTML = 
+                "4반은 개성이 강해 표본표준편차(s)가 " + `<b>${fmtStd(sampleStdDev)}</b>` + "로 비대하게 나온다네. 데이터가 들쑥날쑥해 단서가 불확실하므로, 진짜 평균을 안전하게 포획하기 위해 포위망의 폭이 뚱뚱하고 길게 늘어난 것이라네.";
+        }
+
+        document.getElementById('briefPart3').innerHTML = 
+            `자네가 정한 표본의 크기(n = ${n})와 신뢰도(K = ${K})가 핵심이네. 신뢰도를 95%에서 99%로 올리면 절대 놓치지 않기 위해 안전계수 K가 커져 포위망이 <b>더 넓고 길어지며</b>, 반대로 표본 크기 n을 늘리면 단서가 더 정확해지므로 오차범위가 줄어들어 포위망이 <b>날카롭고 좁아진다네.</b>`;
+
+        let hitText = isCaptured ? `<span style="color:#34d399; font-weight:bold;">[저격 성공 - 포획 완료]</span>` : `<span style="color:#f87171; font-weight:bold;">[저격 실패 - 범위 이탈]</span>`;
+        
+        document.getElementById('br4_box').style.borderColor = isCaptured ? "#34d399" : "#ef4444";
+        document.getElementById('briefPart4').innerHTML = 
+            `이번 단판 작전의 결과는 ${hitText} 이네! <br>🚨 <b>시험 단골 핵심 명확화:</b> 신뢰도 ${confValue}%라는 것은 "진짜 평균이 이 구역에 살아 움직여 들어올 확률이 ${confValue}%"라는 뜻이 절대 아니네! 진짜 평균은 빨간 점선처럼 이미 자리에 가만히 고정되어 있고, 자네가 저격 버튼을 누를 때마다 뽑히는 표본이 달라져 보라색 막대(포위망)의 위치가 매번 바뀐다네. 즉, <b>"이런 저격 작전을 100번 독립적으로 시행하면, 매번 춤추며 변하는 100개의 포위망 막대 중 진짜로 정답(빨간 점선)을 가두는 데 성공하는 막대가 통계적으로 약 ${confValue}개 존재한다"</b>는 뜻이라네. 아래 100회 연속 작전을 켜서 그 명확한 증거를 확인해보게!`;
+
+        document.getElementById('resultBoard').style.display = 'block';
+    }
+
+    function runMultiSimulation() {
+        let successCount = 0;
+        let failCount = 0;
+        const totalSim = 100;
+        
+        const mCanvas = document.getElementById('multiCanvas');
+        const mCtx = mCanvas.getContext('2d');
+        mCtx.clearRect(0, 0, mCanvas.width, mCanvas.height);
+
+        let intervalsData = [];
+        let globalPopMean = 0;
+        let globalPopStd = 0;
+
+        for(let i = 0; i < totalSim; i++) {
+            let res = runSingleScan(true); 
+            if(res.isCaptured) successCount++; else failCount++;
+            intervalsData.push(res);
+            globalPopMean = res.popMean;
+            globalPopStd = res.realPopStd;
+        }
+
+        document.getElementById('simSuccess').innerText = successCount + "회";
+        document.getElementById('simFail').innerText = failCount + "회";
+        document.getElementById('simRate').innerText = ((successCount / totalSim) * 100).toFixed(0) + "%";
+        document.getElementById('simDashboard').style.display = 'flex';
+
+        let minX = targetBaseAvg - globalPopStd * 3.5; 
+        let maxX = targetBaseAvg + globalPopStd * 3.5;
+        let rangeX = maxX - minX;
+
+        // 1. 과녁선 (참값의 고정 위치)
+        let targetCanvasX = ((globalPopMean - minX) / rangeX) * mCanvas.width;
+        mCtx.strokeStyle = 'rgba(239, 68, 68, 0.4)'; // 부드러운 투명 붉은색
+        mCtx.lineWidth = 2.5;
+        mCtx.setLineDash([5, 4]);
+        mCtx.beginPath();
+        mCtx.moveTo(targetCanvasX, 0);
+        mCtx.lineTo(targetCanvasX, mCanvas.height);
+        mCtx.stroke();
+        mCtx.setLineDash([]);
+
+        // 2. 징그럽지 않게 간격(stepY)을 넓히고 두께감 조절
+        let startY = 15;
+        let stepY = (mCanvas.height - 30) / totalSim; // 널널해진 세로 간격
+
+        intervalsData.forEach((data, index) => {
+            let leftX = ((data.realLower - minX) / rangeX) * mCanvas.width;
+            let rightX = ((data.realUpper - minX) / rangeX) * mCanvas.width;
+            let currentY = startY + (index * stepY);
+
+            // 네온 그린 & 네온 로즈 색상 코드로 은은하게 매핑
+            mCtx.strokeStyle = data.isCaptured ? '#34d399' : '#fb7185';
+            mCtx.lineWidth = 2; // 선 두께를 주어 파편처럼 보이지 않게 교정
+            mCtx.beginPath();
+            mCtx.moveTo(leftX, currentY);
+            mCtx.lineTo(rightX, currentY);
+            mCtx.stroke();
+
+            // 중심 표본평균 점 매핑
+            let meanX = ((data.sampleMean - minX) / rangeX) * mCanvas.width;
+            mCtx.fillStyle = '#ffffff';
+            mCtx.beginPath();
+            mCtx.arc(meanX, currentY, 2, 0, Math.PI * 2);
+            mCtx.fill();
+        });
+
+        runSingleScan(false);
+        document.getElementById('simDashboard').style.display = 'flex'; 
+
+        // 사용자가 스크롤 영역을 확인할 수 있도록 부드럽게 초점 제어
+        document.getElementById('simDashboard').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>
